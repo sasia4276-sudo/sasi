@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Bubble Shooter</title>
+<style>
+body{
+    margin:0;
+    background:#111;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    overflow:hidden;
+}
+canvas{
+    background:#222;
+    border:3px solid white;
+}
+</style>
+</head>
+<body>
+
+<canvas id="game" width="500" height="700"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let score = 0;
+
+const bubbles = [];
+for(let i=0;i<25;i++){
+    bubbles.push({
+        x: Math.random()*450+25,
+        y: Math.random()*300+25,
+        r: 20,
+        color: `hsl(${Math.random()*360},100%,50%)`
+    });
+}
+
+let shooter = {
+    x: 250,
+    y: 650,
+    r: 15,
+    color: "white"
+};
+
+let bullet = null;
+// Wall Bounce
+if (bullet.x - bullet.r <= 0 || bullet.x + bullet.r >= canvas.width) {
+    bullet.vx = -bullet.vx;
+}
+canvas.addEventListener("click", (e)=>{
+    if(!bullet){
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+
+        const dx = mx - shooter.x;
+        const dy = my - shooter.y;
+        const len = Math.sqrt(dx*dx + dy*dy);
+
+        bullet = {
+            x: shooter.x,
+            y: shooter.y,
+            vx: dx/len * 8,
+            vy: dy/len * 8,
+            r: 10
+        };
+    }
+});
+
+function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    bubbles.forEach(b=>{
+        ctx.beginPath();
+        ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+        ctx.fillStyle=b.color;
+        ctx.fill();
+    });
+
+    ctx.beginPath();
+    ctx.arc(shooter.x,shooter.y,shooter.r,0,Math.PI*2);
+    ctx.fillStyle=shooter.color;
+    ctx.fill();
+
+    if(bullet){
+        ctx.beginPath();
+        ctx.arc(bullet.x,bullet.y,bullet.r,0,Math.PI*2);
+        ctx.fillStyle="yellow";
+        ctx.fill();
+    }
+
+    ctx.fillStyle="white";
+    ctx.font="24px Arial";
+    ctx.fillText("Score: " + score, 10, 30);
+}
+
+function update(){
+    if(bullet){
+        bullet.x += bullet.vx;
+        bullet.y += bullet.vy;
+
+        for(let i=bubbles.length-1;i>=0;i--){
+            const b = bubbles[i];
+            const dx = bullet.x - b.x;
+            const dy = bullet.y - b.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+
+            if(dist < bullet.r + b.r){
+                bubbles.splice(i,1);
+                bullet = null;
+                score += 10;
+                break;
+            }
+        }
+
+        if(
+            bullet &&
+            (bullet.x < 0 || bullet.x > canvas.width ||
+             bullet.y < 0 || bullet.y > canvas.height)
+        ){
+            bullet = null;
+        }
+    }
+}
+
+function gameLoop(){
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+
+</body>
+</html>
